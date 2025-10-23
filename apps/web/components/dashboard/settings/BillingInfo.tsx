@@ -5,7 +5,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSettings } from "@/hooks/useSettings";
 import { CreditCard, Loader2 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client";
+import { useSupabase } from "@/components/supabase-provider";
+import {capitalize} from "@/helpers/capitalize"
+import { formatDate } from "@/helpers/formatDate";
 
 // A type for the component's data state
 interface BillingData {
@@ -14,13 +19,30 @@ interface BillingData {
   paymentMethod: string | null
 }
 
+interface BillingDetails {
+  subscription_end_date: string;
+  subscription_type: string;
+}
+
 export function BillingInfo() {
 
-  const { updateBilling, loadingBilling } = useSettings()
+  const { updateBilling, loadingBilling, billingDetails, fetchSubscriptionDetails } = useSettings()
+  const router = useRouter()
+    const { supabase, user, fetchPlan, plans, planLoading } = useSupabase()
 
 
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [billingData, setBillingData] = useState<BillingData | null>(null)
+ 
+  useEffect(() => {
+   if(user) {
+    fetchSubscriptionDetails(user?.id)
+    fetchPlan()
+   }
+  }, [user])
+
+  const findUserPlan = plans?.find(item => item.id === billingDetails?.plan_id)
+
 
   useEffect(() => {
     const fetchBillingData = async () => {
@@ -67,10 +89,10 @@ export function BillingInfo() {
                 </>
               ) : (
                 <>
-                  <p className="font-medium">{billingData?.currentPlan} Plan</p>
-                  {billingData?.nextBillingDate && (
+                  <p className="font-medium">{capitalize(findUserPlan?.name) || "Free"} Plan</p>
+                  {billingDetails?.current_period_end && (
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Next billing date: {billingData.nextBillingDate}
+                      Next billing date: {formatDate(billingDetails.current_period_end) || "Please subscribe to a plan"}
                     </p>
                   )}
                 </>
@@ -79,7 +101,7 @@ export function BillingInfo() {
             {isLoadingData ? (
               <Skeleton className="h-8 w-28 rounded-md" />
             ) : (
-              <Button variant="outline">Upgrade Plan</Button>
+              <Button variant="outline" onClick={() => router.push("/dashboard/plan")}>Upgrade Plan</Button>
             )}
           </div>
         </div>

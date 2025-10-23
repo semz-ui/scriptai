@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === "/api/auth/callback" ||
     request.nextUrl.pathname === "/api/track-referral" ||
     request.nextUrl.pathname === "/api/contact-us" ||
-    request.nextUrl.pathname === "/api/report-issue" 
+    request.nextUrl.pathname === "/api/report-issue" || 
+    request.nextUrl.pathname === "/api/stripe/webhook" 
   ) {
     return response
   }

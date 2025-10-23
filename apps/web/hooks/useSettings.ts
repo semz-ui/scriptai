@@ -5,6 +5,11 @@ import { useState } from "react";
 import { useSupabase } from "@/components/supabase-provider";
 import { toast } from "sonner";
 
+interface BillingDetails {
+  current_period_end: string;
+  plan_id: string;
+}
+
 export function useSettings
 () {
   const { supabase, user } = useSupabase();
@@ -14,6 +19,7 @@ export function useSettings
 const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [loadingBilling, setLoadingBilling] = useState(false);
+  const [billingDetails, setBillingDetails] = useState<BillingDetails | null>(null)
 
   // --- Profile update ---
   const updateProfile = async ({
@@ -141,6 +147,25 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
     }
   };
 
+  const fetchSubscriptionDetails = async (userId:string): Promise<void> => {
+    setLoadingBilling(true)
+     try {
+      const { data: existing } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .single()
+
+      if(existing) {
+        setBillingDetails(existing as BillingDetails)
+      }
+     } catch (error) {
+      
+     } finally {
+      setLoadingBilling(false)
+     }
+  } 
+
   // --- Password reset ---
   const changePassword = async () => {
     if (!user?.email) return;
@@ -174,5 +199,7 @@ const [isChangingPassword, setIsChangingPassword] = useState(false);
     // Billing
     updateBilling,
     loadingBilling,
+    fetchSubscriptionDetails,
+    billingDetails,
   };
 }
